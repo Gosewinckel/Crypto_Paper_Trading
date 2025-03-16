@@ -3,6 +3,8 @@ import json
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
+
 
 class coin_data:
     def __init__(self, symbol):
@@ -15,17 +17,23 @@ class coin_data:
         self.ws.connect(f"wss://stream.binance.com:9443/ws/{self.symbol}@aggTrade")
         if self.ws.connected:
             self.position_open = True
+        else:
+            raise Exception("error connecting with data")
 
     def price(self):    #return price
         data = json.loads(self.ws.recv())
         return float(data["p"])
 
-    def stream(self):   #save live data to data. Must be threaded to avoid problems
+    def stream_fn(self):   #save live data to data. Must be threaded to avoid problems
         while self.position_open:
             data = json.loads(self.ws.recv())
             self.data.append(float(data['p']))
             print(self.data)
             time.sleep(1)
+
+    def stream(self):
+        thread = threading.Thread(target=self.stream_fn)
+        thread.start()
 
    #TODO
     def plot_price(self):
